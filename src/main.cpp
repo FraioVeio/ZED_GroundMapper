@@ -7,9 +7,6 @@
 // ZED includes
 #include <sl/Camera.hpp>
 
-// Define if you want to use the mesh as a set of chunks or as a global entity.
-#define USE_CHUNKS 1
-
 using namespace std;
 
 sl::Camera zed;
@@ -49,13 +46,13 @@ int main(int argc, char** argv) {
     spatial_mapping_params.resolution_meter = sl::SpatialMappingParameters::get(sl::SpatialMappingParameters::MAPPING_RESOLUTION_LOW);
     spatial_mapping_params.save_texture = false;
     spatial_mapping_params.max_memory_usage = 512;
-    spatial_mapping_params.use_chunk_only = USE_CHUNKS; // If we use chunks we do not need to keep the mesh consistent
+    spatial_mapping_params.use_chunk_only = true;
 
     filter_params.set(sl::MeshFilterParameters::MESH_FILTER_LOW);
 
     startMapping();
 
-    while(1) {
+    while(true) {
         if(zed.grab() == sl::SUCCESS) {
             tracking_state = zed.getPosition(pose);
 
@@ -66,21 +63,16 @@ int main(int argc, char** argv) {
                 zed.requestMeshAsync();
                 t_last = std::chrono::high_resolution_clock::now();
             }
-/*
+
             if (zed.getMeshRequestStatusAsync() == sl::SUCCESS) {
-                // Get the current mesh generated and send it to opengl
+                // Get the current mesh generated
                 if (zed.retrieveMeshAsync(mesh) == sl::SUCCESS) {
-#if USE_CHUNKS
                     for (int c = 0; c < mesh.chunks.size(); c++) {
-                        // If the chunk does not exist in the rendering process -> add it in the rendering list
-                        if (mesh_object.size() < mesh.chunks.size()) mesh_object.emplace_back();
                         // If the chunck has been updated by the spatial mapping, update it for rendering
-                        if (mesh.chunks[c].has_been_updated)
-                            mesh_object[c].updateMesh(mesh.chunks[c].vertices, mesh.chunks[c].triangles);
+                        if (mesh.chunks[c].has_been_updated) {
+
+                        }
                     }
-#else
-                    mesh_object[0].updateMesh(mesh.vertices, mesh.triangles);
-#endif
                 }
             }*/
         }
@@ -122,8 +114,8 @@ void stopMapping() {
     zed.extractWholeMesh(wholeMesh);
     std::cout << ">> Mesh has been extracted..." << std::endl;
 
-    // Filter the extracted mesh
-    wholeMesh.filter(filter_params, USE_CHUNKS);
+    // Filter the extracted mesh     |chunks true
+    wholeMesh.filter(filter_params, true);
     std::cout << ">> Mesh has been filtered..." << std::endl;
 
     // If textures have been saved during spatial mapping, apply them to the mesh
