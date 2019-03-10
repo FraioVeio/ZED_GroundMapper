@@ -42,10 +42,9 @@ link_directories(${CUDA_LIBRARY_DIRS})
 #link_directories(${OpenGL_LIBRARY_DIRS})
 
 FILE(GLOB_RECURSE SRC_FILES src/*.cpp)
-#FILE(GLOB_RECURSE HDR_FILES include/*.cpp)
+FILE(GLOB_RECURSE HDR_FILES include/*.cpp)
 
-#ADD_EXECUTABLE(${execName} ${HDR_FILES} ${SRC_FILES})
-ADD_EXECUTABLE(${execName} ${SRC_FILES})
+ADD_EXECUTABLE(${execName} ${HDR_FILES} ${SRC_FILES})
 add_definitions(-std=c++11 -g -O3)
 
 if (LINK_SHARED_ZED)
