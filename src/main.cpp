@@ -1,8 +1,5 @@
 #include <iostream>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <signal.h>
 
 // ZED includes
 #include <sl/Camera.hpp>
@@ -18,13 +15,18 @@ sl::TRACKING_STATE tracking_state;
 
 
 std::chrono::high_resolution_clock::time_point t_last;
+volatile sig_atomic_t flag = 0; // Flag for SIGINT
 
 
+void zedLoop();
 void startMapping();
 void stopMapping();
-
+void exiti(int sig);
 
 int main(int argc, char** argv) {
+    // Register signal SIGINT for Ctrl+C handling
+    signal(SIGINT, exiti);
+
     // Setup configuration parameters for the ZED
     sl::InitParameters parameters;
     if (argc > 1) parameters.svo_input_filename = argv[1];
@@ -45,14 +47,28 @@ int main(int argc, char** argv) {
     spatial_mapping_params.range_meter = sl::SpatialMappingParameters::get(sl::SpatialMappingParameters::MAPPING_RANGE_FAR);
     spatial_mapping_params.resolution_meter = sl::SpatialMappingParameters::get(sl::SpatialMappingParameters::MAPPING_RESOLUTION_LOW);
     spatial_mapping_params.save_texture = false;
-    spatial_mapping_params.max_memory_usage = 512;
+    spatial_mapping_params.max_memory_usage = 1024;
     spatial_mapping_params.use_chunk_only = true;
 
     filter_params.set(sl::MeshFilterParameters::MESH_FILTER_LOW);
 
-    startMapping();
 
-    while(true) {
+    startMapping();
+    zedLoop();
+    stopMapping();
+
+
+    zed.close();
+    return 0;
+}
+
+
+void exiti(int sig){ // can be called asynchronously
+  flag = 1; // set flag
+}
+
+void zedLoop() {
+    while(!flag) {
         if(zed.grab() == sl::SUCCESS) {
             tracking_state = zed.getPosition(pose);
 
@@ -74,14 +90,9 @@ int main(int argc, char** argv) {
                         }
                     }
                 }
-            }*/
+            }
         }
     }
-
-
-    stopMapping();
-    zed.close();
-    return 0;
 }
 
 /**
